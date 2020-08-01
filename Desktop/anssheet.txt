@@ -1,0 +1,75 @@
+val sqlContext = new org.apache.spark.sql.hive.HiveContext(sc) //creating SQLContext
+>val cs= spark.read.option("header",true).csv("E:/nonConfidential.csv") //Reading CSV file
+ cs: org.apache.spark.sql.DataFrame = [ID: string, Isconfidential: string ... 17 more fields]
+
+>val par= spark.read.option("header",true).parquet("E:/confidential.snappy.parquet") //reading parquet file
+ par: org.apache.spark.sql.DataFrame = [ID: string, Isconfidential: string ... 17 more fields]
+
+>val merged = cs.union(par) //combining two files
+ merged: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [ID: string, Isconfidential: string ... 17 more fields]
+
+> merged.createOrReplaceTempView("newdata") // creating temporary view of dataset
+
+=================================ANSWERS==============================================================
+$$$$$ ANSWER 1:
+
+>val ans1=spark.sql("select count(LEEDSystemVersionDisplayName) from newdata where State like 'VA'")
+
+ ans1.show()
++-----------------------------------+
+|count(LEEDSystemVersionDisplayName)|
++-----------------------------------+
+|                               2746|
++-----------------------------------+
+
+$$$$$ ANSWER @:
+>val ans2= spark.sql("select OwnerTypes,count(LEEDSystemVersionDisplayName) from newdata where State like 'VA' gro
+up by OwnerTypes").show()
++--------------------+-----------------------------------+
+|          OwnerTypes|count(LEEDSystemVersionDisplayName)|
++--------------------+-----------------------------------+
+|Government Use: F...|                                 79|
+|Non-Profit Org., ...|                                  1|
+|Educational: K-12...|                                  3|
+|Local Government,...|                                  1|
+|  Federal Government|                                137|
+|        Confidential|                                519|
+|Educational: Univ...|                                 48|
+|         Profit Org.|                                347|
+|Investor: REIT,No...|                                  8|
+|Investor: Pension...|                                  6|
+|Investor: Insuran...|                                  4|
+|Educational: K-12...|                                 23|
+|                null|                                547|
+|          Individual|                                 82|
+|Corporate: Privat...|                                197|
+|Local Government,...|                                  2|
+|Investor: Investm...|                                 16|
+|Government Use: L...|                                 48|
+|Community Develop...|                                  3|
+|    State Government|                                 91|
++--------------------+-----------------------------------+
+only showing top 20 rows
+
+$$$$$ ANSWER 3:
+>val ans3 = spark.sql("select int(sum(GrossSqFoot)) from newdata where IsCertified like 'Yes' and State like 'VA'
+").show()
+
++---------------------------------------------+
+|CAST(sum(CAST(GrossSqFoot AS DOUBLE)) AS INT)|
++---------------------------------------------+
+|                                    149144382|
++---------------------------------------------+
+
+$$$$$ ANSWER 4:
+
+>val ans4=spark.sql("select max(mycount) zipcode from(select Zipcode, count(Zipcode) mycount from newdata group by
+ Zipcode)")
+ans4.show()
++-------+
+|zipcode|
++-------+
+|  23503|
++-------+
+
+
